@@ -1,0 +1,178 @@
+﻿第一章 并发编程
+java编程思想
+ea (企业应用架构模式)
+基础篇（一）
+1.1线程安全，多个线程多个锁，拿的是对象锁。
+俩个对象不同的锁，互不影响。
+synchronized拿的是方法所属对象的锁 
+例1：new 俩对象
+new俩线程，去跑这个对象的同一个方法，结果互不影响。
+简单解决原子操作，加上static，类级别，问题变成同步了。
+变量加static，就是类的就一份，安全区又是互斥区。不停地竞争锁，出现cpu
+利用率高。
+1.2同步为了共享，共享为了安全。原子性和可见性。
+分布式数据库，把表中的数据拆分到俩个服务器的数据库，或者俩个数据库
+，减低压力，和同步异步俩码事。
+1.3锁重入，方法中运行方法，每个方法加锁。
+1.4子类中调用父类方法，父类也有加锁，也是没问题的，也是安全的
+1.5出异常会释放锁，异常的时候其他异常都进去了，异常的时候做一些回滚啊什么的。
+异常多使用细粒度的异常。
+2.1  volatile关键字主要作用使变量再多个线程间可见
+每一个线程有自己的工作内存区，存放着共享主内存变量的拷贝。执行时修改自己的变量，先
+清除自己的工作区，然后加载共享的线程进来，线程完成时或解锁时在写回去。
+流程：use assign load store lock unlock
+主内存：read write lock unlock
+volatile 作用是强制去共享主内存中去读取变量，不去线程工作区去读取，满则线程安全。
+2.2明明全局变成变量变false了，为何还在死循环。加了volatile就停止了。
+线程执行引擎不和自己的工作区交互，而是和主内存区域交互，有的线程自己内部会有无限循环，不然主内存变量都不会变，
+有些场景需要做，实时的就知道了，不一定等线程运行完了才知道。
+不具备同步性，比如你操作一半的时候，另一个直接改了，业务有问题了。
+没有原子性，具备可见性，没有原子性，可以多用原子类对象实现同步
+atomic只保证本身方法的原子性，不保证多次操作的原子性。
+volatile不会保证最后是10000.
+AtomicInteger 原子类不用sych了，中间会乱，最终会是10000.
+synch一定会同步，1000,2000,10000
+3.1线程通信，使用wait和notify，object类的
+wait方法释放锁，notify不放锁，多个线程之间有个顺序流，这个跑，另一个等之类的。
+必须配合synchronized，不然没法使用
+锁随便new一个对象，保持一样就行。然后lock.wait(),lock.nitify()
+在线程方法中run中代码块加synchronized，wait和notify在其中用
+因为线程之间是同步的，其中一个wait释放锁，另外一个线程就会执行，其中notify了，但是不放锁，得我执行完了以后，wait那个就会唤醒
+得同一个对象加锁。
+3.2 countDownLatch对象
+有await方法，不用加锁，直接等待，然后另一个线程countDown的时候，另一个await立即执行，自己呢也会继续执行
+例子比如远程连接
+得建立连接并返回才能继续操作，得阻塞，阻塞就是同步。就得用countdownlatch，不保证原子性。4
+立马通知另一个线程，lock有延迟
+3.3BlockingQueue,一个队列，支持阻塞
+put方法进去。如果没空间，线程被阻断，直到有空间再继续
+take：若队列为空，阻塞进入等待直到有新的数据加入才连接
+3.4 TheadLoacl和单例模式
+线程局部变量，是一种多线程间并发访问变量的解决方案，与加锁不同，
+完全不提供锁，以空间换时间的手段，提供独立的副本，保证线程安全。
+提供了与锁无关的线程安全解决方案，减少锁竞争，提高性能。
+在当前线程有效
+new TheadLocal() 有自己的set（） get() 方法，保证原子性
+另一个线程同样的变量get方法得不到。只在一个线程中有效
+静态内部类，天然的线程安全
+中级篇
+1.1 同步类容器都是线程安全的
+vector，hashtable ，stringBuffer，proerties，可能还要加锁保证复合性操作，比如迭代，
+迭代过程花了5秒，其他线程也过来了，对迭代过程进行删除，会有modifyException
+，底层用了锁机制
+可以使用Collections.Synchronized封装普通容器进行封装进行有同步的特性，就是加了一堆的锁
+不满足线程安全而且性能，这有缺陷，性能不行，对锁进行优化解决性能
+1.2 并发类容器 1.5以后提供并发类容器代替1.5之前的
+使用concurrentHashMap 代替
+添加常见复合性的操作
+concurrentskiplistMap 支持排序
+原理就是减少线粒度，每一个段相当于hashtable，发生不同的段，不同的数据区域
+拆分16个段，支持16个线程并发，减少锁竞争，多使用volatile，目的第一时间修改好内容
+目的明确就是性能快。存储分区，就是分段
+自己可以定义容器，内部封装容器，封装多一层。
+api多了一个putIfAbsent() 方法
+CopyOnwriteArraylist 代替vector
+CopyOnwriteArrayset
+cow优化策略，并发读的性能高，写时复制，添加时不是直接添加，
+先copy这个cow对象，然后在新的容器中操作，新的容器引用改变
+写完之前，都是对原容器读，写完，引用改变，对新容器读
+对读多写少适合，写多，则不适合，特别是原数据本身就大，先copy则消耗大。读写分离，不用加锁
+concurrentLinkedqueue 和 linkedBlockingQueue
+2.1并发queue
+非阻塞queue和阻塞队列
+concurrentLinkedQueue BlockingQueue 集成来自Queue
+每一个大类都有很多实现类。
+concurrentLinkedQueue通过无锁的方式，实现高并发，
+好于阻塞队列，不允许有null值。
+add和offer方法在concurrent每区别在blockingqueue中有区别，可以阻塞回调
+offer可以阻塞
+阻塞queue有很多
+ArrayBlockingQueue 定长数组，内部每实现读写分离，长度要定义，指定先进先出还是先进后出
+，有界队列，生产和消费不能并行
+LinkedBlockingQueue
+链表实现，有分离锁，生产和消费可以并行，无界队列
+SynchronizedQueue
+没有缓冲的队列，生产者数据直接被消费者消费，
+直接加会queuefull异常，不能放任何元素，基于阻塞。
+pull 和 take，直接阻塞，有一个元素过来直接给线程消费去处理，必须有俩个线程，一个take直接阻塞在那等着一个add
+业务量比较少的时候，性能好，即时性很高
+PriorityBlockingQueue
+优先级阻塞队列，对象必须实现comparable接口，公平锁，无界队列
+元素实现比较接口，拿的时候按照优先级去拿的，add的时候并没有排序，
+而是take的时候对元素进行排序，调第一次的时候已经排序了
+DelayQueue
+延迟队列，元素必须实现delayed接口，无界队列。到时间了才能从队列中拿take
+第一步下机时间和当前时间做比较，元素和元素之间谁先进谁先出做对比。
+生产10条，消费1条，服务器消费1条，处理不完，10条放入队列中，有界怕内存溢出
+，怕服务器挂掉。
+非高峰期用无界队列，预警服务监控流量通知切换队列
+为何要有队列，处理不过来，才去缓存到队列中的，确定能处理就不用队列了
+设计模式
+3.1 future模式 网购
+商品订单类似，发一个请求，我等待就行了，这中间该做什么就什么，让他异步执行就行了
+客户端data对象，去调返回一个包装类，包装类去调用比如查询之类的，真实数据，然后返回，客户端实际使用时，获取数据
+异步模式，包装类中封装了一个线程去运行拿取操作。返回了包装类，如果外面有一个线程，那么里面则俩个线程运行
+真实数据去阻塞，先拿空对象，线程阻塞后面代码不执行。
+netty内部就是异步 非阻塞。给你空对象，你继续执行。
+3.2 Master-woker模式
+并行计算模式，俩类进程协作工作，master负责接收和分配工作，woker负责处理子任务。
+各个子进程处理完成，master去归纳总结。大任务分成小任务，提高系统的吞吐量。
+客户端100个任务，master有100个job的queue，不需要阻塞queue，
+而且得有一个hashmap维护需要的woker进程，还有一个concurrentHashmap的每个woker的执行结果
+
+3.3 生产者和消费者模式
+利用阻塞队列，若干个生产线程和若干消费线程，共用一个缓存空间，一堆去提交数据，若干去拿数据消费。
+缓存空间就是队列，共享缓存。抛异常怎么办，记录偏移量，下次重现来了的时候，去文件中定位到这。
+多个生产者和消费者不停地去和缓存去放和拿
+高级篇
+1.1 线程池框架 Executor框架 返回ExtetorService 都是通过ThreadPoolEecutor类根据
+不同的参数去实例不同的对象
+Executors创建线程池
+newFixedThreadPool 固定数量的线程池，有空闲则去执行，没有则在队列中等待
+指定队列放入任务，线程会去自行，内部使用无界阻塞队列，注意任务数
+newSingleThreadExecutor 创一个，绝对线程安全的策略，也是无界队列
+newCachedThreadPool 根据实际去调整线程池，不限制，没任务会自动回收，空闲时间为60s
+初始化的时候是0线程，内部维护一个同步队列，来一个创一个执行
+newScheduledThreadPool 返回一个SchededExecutorService对象
+可以指定线程的数量，实现定时的job。
+内部有延迟队列，无线增大
+spring 家族有
+mvc . batch 批处理 . quatz-scheduled 调度 . security 验证 . jpa jdbctemplate .
+boot内嵌tomcat，直接运行web，开源框架好配置
+. cloud分布式soa服务 . cache 缓存服务=redis好多框架集成进来 
+jms = activemq整合= rabbit . springhttpinvoke . spring 集成 kafka
+1.2 使用
+pool.execute(任务)
+还要submit方法，内部实现callable接口，异步执行call方法，和future模式类似
+shutdown 运行完停止，还有立即停止 shutdownnow
+2.1自定义线程池
+ThreadPoolExecutor（int size ,int maxSize,long keepAliveTime(销毁时间),
+TimeUnit unit ,BlockingQueue<Runnable> workQueue,ThreadFactory ,
+RejectExecutionHandler handler(拒绝的策略，有一些任务被拒绝，根据上限
+提供线程，再往队列扔，最后多少任务被拒绝了就扔这里，拒绝策略很多种)）
+使用有界队列
+ThreadPoolExecutor pool=new ThreadPoolExecutor（...)
+实际线程小于size，则优先创建线程，大于则将任务加入队列，队列满了，
+则总线程不大于maxsize则创建线程，大于的话，执行拒绝策略，或其他定义方式，也可以不用拒绝
+使用无界队列
+小于size，则创，达到size后，任务直接进入队列等待，无界队列直到系统内存耗尽
+拒绝策略很多种 
+AbortPolicy ：抛出异常
+callerRunsPolicy ：线程池未关闭，该运行当前丢弃的任务， 
+DiscardOldesPolicy: 丢弃最老的请求，尝试再次提交当前任务。
+如果需要自定义策略，可以自定义策略实现RejectedExecutionHandler
+拒绝了做什么事，保证数据不丢失。
+转到另外一台服务器上继续处理，
+或者存到一张表中，继续拿着执行
+3.1 Concurrent.untils工具类的使用
+ScheduledExecutorService scheduer=Executors.newScheduledThreadPool();
+ScheduledFuture scheduleTask=scheduer.scheduleWithFixedDelay(command,1,3,TimeUnit.SECONDS)
+1初始化时间，3 轮循时间，每隔3秒去执行，1s延迟去初始化，
+实现定时器
+使用spring schedule注解去实行定时器任务
+第二章 activeMQ消息中间件
+1.俩个系统互相交换，几十万条数据发，那边处理能力不高，
+会产生消息堆积，会存在内存中，内存不行。放入消息中间件中，
+让中间件和另一个服务器交互。
+2. 分布式系统，把数据放入消息中间件中，其他系统就去那个中间件中拿好了
+

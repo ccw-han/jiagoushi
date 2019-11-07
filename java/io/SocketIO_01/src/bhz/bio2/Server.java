@@ -19,7 +19,7 @@ public class Server {
 			Socket socket = null;
 			HandlerExecutorPool executorPool = new HandlerExecutorPool(50, 1000);
 			while(true){
-				//防止线程过多服务器挂掉的手段
+				//防止线程过多服务器挂掉的手段 这边是阻塞着
 				socket = server.accept();
 				executorPool.execute(new ServerHandler(socket));
 			}
