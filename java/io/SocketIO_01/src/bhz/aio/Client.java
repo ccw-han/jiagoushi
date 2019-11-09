@@ -47,6 +47,7 @@ public class Client implements Runnable {
 
     @Override
     public void run() {
+        //因为是非阻塞的，所以不让他结束
         while (true) {
 
         }
@@ -61,7 +62,7 @@ public class Client implements Runnable {
 
         Client c3 = new Client();
         c3.connect();
-
+        //不让结束
         new Thread(c1, "c1").start();
         new Thread(c2, "c2").start();
         new Thread(c3, "c3").start();

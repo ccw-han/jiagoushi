@@ -1,0 +1,362 @@
+1环境搭建
+1.1
+参考 www.jb51.net/os/85895.html
+使用VMware虚拟机软件，虚拟的pc软件
+在现有的系统上虚拟出一个硬件环境。
+解压--疯狂下一步--安装成功--新建虚拟机--安装光盘映像文件（linux系统）--输入名称--安装位置（D盘）
+--默认核数--默认内存--使用桥接模式--下一步--一直下一步--硬盘大小--最后的自定义硬件配置（确认一遍）不要选择开启启动虚拟机
+cd/dvd 打开选中自己的镜像文件--开启此虚拟机--tab建回车不用管--tab建进入系统 skip
+点进去next--选中语言（使用英文）next--选用keyboard--basic storage devices 
+--提示框（yes格式化）--hostname直接next--输入时区--输入用户名和密码（最大权限root系统用户名和密码）
+--选择一个模式（自定义布局，对盘符划分）--开始分配硬盘空间create
+必须有分区（根分区和swap分区，系统分区5,6个g，swap有1g）--create--/ size 10000 ok
+-- 下拉选择swap 1000 ok--然后自己新建盘，以/开头--next -- fromat--
+write to disk--next--选中desktop带桌面--next--安装成功reboot--
+forward--yes--输入用户名和密码（有个系统普通用户）--选择时间--有个错误不管--finish--使用root用户
+--右键network connections编辑--edit--勾上俩个勾--ipv4--manual手工add
+192.168.1.111 255.255.255.0 192.168.1.1 dns也填192.168.1.1跟本机保持一致
+--右键进入终端
+ifconfig 看ip配置命令
+1.2
+service network restart 重启网卡
+ping 192.168.1.200   一直在ping
+clear 清屏
+ping不通，防火墙可能有问题，关上
+service iptables status  看防火墙状态
+學習的時候建议关着的，service iptables stop 本次关闭
+chkconfig iptables off 始终关闭
+chkconfig --list | grep iptables 检验有没有关闭
+xshell软件控制linux
+解压--安装--连接虚拟机ip--不用虚拟机里面的终端
+新建--设置连接--ssh协议 主机和虚拟机ip一致--连接--主机秘钥接受并保存
+登录名和密码--记住密码--确定--可以在终端直接操作
+cd /usr/local 下面的目录都可以删除
+pwd   看目录地址
+ls -l 查看文件
+在xshell新建文件传输
+一半是本机一半是虚拟机
+/下面有很多目录
+
+2系统介绍
+2.1
+ls -la /usr 命令+选项+参数
+ll 命令查看详细信息
+hostname ss 改主机名为ss
+/etc 存放一堆配置
+/usr/local 是自己的文件夹
+ls 下面 以-开头为文件 d开头为文件夹
+rm -f 文件或文件夹  删除文件或文件夹
+ls -la a表示隐藏的文件也显示
+权限三个为一组 
+rwx 读写执行 没有为r-x
+三部分 所有者+所有组+others的权限
+
+
+3常用命令
+
+3.1
+文件处理命令
+ls
+touch 文件名 创建一个空文件如果已存在则修改时间
+mkdir 文件夹 新建文件夹
+vim 文件名  编辑文件
+cat 文件名  只能显示部分
+more 文件名	可以看到全部内容 回车下一行 q退出
+cp 源文件或文件夹 目标文件目标目录
+cp -r 递归赋值 若目标文件夹存在则赋值到里面
+rm -f 文件   删除文件
+rm -r 目录   删除目录
+rm -rf       递归删除
+head -number 文件名 查看文件的前多少行
+tail -number 文件名  查看文件的后几行
+mv 源文件 新文件   改名
+mv 源文件 新文件位置+新文件名称  移动文件到目标下并重命名下
+ln -s 源文件 目标文件 硬连接不需要-s 软连接是个快捷方式
+硬连接类似copy,同步更新的
+ln -s b.sh bb.sh
+比较方便，不用一定要去目录下启动脚本
+3.2
+权限处理命令
+chmod  ugo +-= rwx 文件或目录
+rwx 为421
+chmod u+rwx 文件或目录
+chmod 761 文件或目录 761表示ugo分组的权限
+chown user 文件 改变文件的所有者
+useradd username 添加用户
+password username 为用户设置密码
+chgrp group 文件 为所属组所有者 group为组名
+umask -S 查看权限
+3.3
+文件搜索命令
+find 范围路径 -name （*？任意和指定字符）init  文件名查找 
+			-size +10 大于小于 以快为单位512bit为块
+			-user baidu 文件的所有者
+find 范围 -mmin -120 -表示之内 +表示之外
+ctime atime mtime 天为单位
+c表示文件属性改变 a表示查看过 m表示更改内容
+find -a -o 逻辑与逻辑或
+-type fld 二进制和连接和目录
+which 命令名称 查看命令所在目录位置
+alias是别名的意思 
+我们敲的是命令的别名，默认带了一些选项
+find /test -name t1.sh -exec rm -f {} \;
+表示找到这个文件执行命令rm {}表示查找结果
+find /test -name t1.sh -ok rm -f {} \;
+ok和exec表示询问确认的意思
+在系统中每个文件都有唯一的标识，叫节点
+ls -li 这个i为标识相当于id
+find /test -inum 14 查找i节点查找
+locate 文件名称 也是查找文件，根据索引来查找的，系统内部有个存放
+文件的数据库，从数据库去查找，效率很高，并不是创一个就写到数据库中，
+有时候会找不到，一定要先更新数据库
+updatedb 更新数据库
+man  命令或配置文件     帮助命令
+whatis 命令             查看命令描述
+命令   --help           看如何使用
+
+
+3.4
+解压缩
+gzip 文件名称   压缩的时候不能保留源文件，不能压缩文件夹
+gunzip 已压缩的文件 不保留源文件 
+tar -zcvf   打包文件名.tar.gz 源文件  c表示压缩
+tar -zxvf	jdkd.tar.gz -C /usr/local/ 表示解压到指定目录
+删除就是卸载
+vim /etc/profile 配置环境变量
+export JAVA_HOME=/usr/local/jdk1.7
+export PATH=.:$JAVA_HOME/bin:$PATH
+source /etc/profile 让环境变量生效
+zip格式通用
+zip -r 压缩后名称 原文件 压缩目录时使用r选项
+unzip 解压文件 -d 路径
+3.5
+其他命令
+ping
+ifcongif
+shutdown -h now 关机
+reboot 重启网卡
+ctrl+l 清屏
+ctrl+c 退出应用
+grep 过滤输出 管道 | 管道指定给其他命令输入，可以连接n个
+ls -l /etc | more 
+ls -l /etc | gerp init 过滤init名字的文件
+ls -l /etc | gerp init | wc -l wc为统计个数
+ps -el | grep 8080 查看进程过滤8080端口
+netstat tunpl | grep redis    网络服务
+&& 逻辑与 ls && pwd
+|| 逻辑或 第一个成功，第二个不执行
+shell 输入输出重定向
+0 标准输入 1 标准输出 2错误输出
+ll /test >  /test/a.log  输出的内容放入另一个文件里
+>>  俩个表示追加
+
+编辑命令
+vim进入命令模式
+i a o 还有各自大写 进入插入模式不同位置 esc退出
+： 进入编辑模式 比如插入复制等等
+:wq保存退出
+:q!不保存退出
+定位命令在编辑模式
+:/Hello 定位
+:set nu 有行号
+:set nonu 取消行号
+删除命令
+在命令模式下删除
+x 删除所处字符
+nx 后n个字符
+dd 删除行 ndd 删除n行
+dG 行到末尾
+D 行到行尾
+:n1 , n2d 删除指定范围的行
+命令模式下
+yy Y 复制当前行
+nyy nY 复制当前行以下行
+dd剪切当前行
+ndd 剪切当前行以下n行
+p P 粘贴当前光标所在行以下或行上
+替换和搜索
+:%s/old/new/g 全文替代指定字符串
+:n1,n2s/old/new/g 一定范围内替代
+用户管理
+/etc/passwd 用户信息文件
+/etc/shadow 密码文件
+用户配置文件 /etc/login.defs /etc/default/useradd
+新用户文件 /etc/skel
+用户组文件 /etc/group
+用户组密码文件 /etc/gshadow
+超级用户 uid=0 root权限特别大
+普通用户 uid=500-60000
+伪用户 uid 1-499 系统和进程相关，有身份去操作命令，任何进程
+操作shell必须指定用户身份，伪用户无法登陆系统
+添加用户组
+groupadd -g 1001 webs 创一个webs用户组，组id为1001
+groupdel 组名 删除组
+groupmod -n 新组名 旧组名
+groups ul 查看用户属于那些组
+添加用户 
+useradd -u 1002(uid) -g webapps(属于哪个组) -G sys,root（指定多个组） -d /webs(宿主目录)
+-s /bin/bash(命令解释权shell) -c "is a u2" -e 2015-12-12 (失效时间)
+usermod -l 新用户名 旧名
+usermod -L 用户名 禁用
+passwd -l 用户名
+恢复
+usermod -U 用户名
+passwd -u 用户名
+用户组操作
+gpasswd -a 用户名 用户组名
+gpasswd -d 用户名 用户组名 删除
+gpasswd -A 用户名 用户组名 用户组管理员设置
+用户组授权
+chgrp g1 /test/software
+ls下
+chmod g+rwx /test/software
+进程管理
+程序被多个进程共用。
+前台进程是不允许其他命令执行。
+后台进程 多个进程一起执行。在命令最后加上 &
+w 查看用户信息
+TTY 什么方式登录，pts/0 远程登录
+FROM
+LOGIN@ 时间
+IDLE 闲置时间
+JCPU  执行所有进程耗时
+PCPU 执行程序耗费
+WHAT 当前执行任务
+load average 1,5,15 分钟负载程度
+ps -al a显示所有进程 l长格式显示
+STAT 当前状态 S休眠 D 不可中断的休眠 R运行 Z僵死 T停止
+UID 用户id
+PID 进程号
+PPID 父进程号
+TTY 进程启动终端
+IN  进程优先级
+TIME 进程启动以来占用时间
+CMD 进程的命令
+-u 显示用户名和时间
+-e 显示所有进程，包括没有控制终端的进程
+ps -aux 当前进程占用内存的百分比
+ps -el --sort pid 排序
+ps -aux | grep rpc 进程结果进程过滤
+kill 进程号    关闭进程
+kill -9 1234 强制关闭进程
+kill -1 进程号 重启进程
+xkill  关闭图形程序
+killall 所有结束
+pgrep 服务名称
+pkill redis 关闭进程
+nohup program & 进程在用户退出后仍继续执行
+终止程序运行 ctrl+chgrp挂起程序运行 ctrl+z
+jobs 放在后台的进程可以查看
+fg 任务编号 放入前台执行
+bg 任务编号 放入后台继续执行
+top 进程状态显示和进程控制，5秒变化一次
+d 多长时间刷新
+c 整个命令行的详细信息
+u 可以查看指定用户的进程
+k 终止正在执行的进程
+任务计划
+at 某一时刻执行的作业一次。
+cron 周期运行
+HH:MM YYYY-MM-DD绝对时间
+at 22:12 2015-01-21
+at now+2 minutes 回车
+输入任务 命令的绝对路径
+/usr/bin/wall < /test/a.log 输入重定向，可以输多个任务
+ctrl+d 保存退出
+wall 广播一下，在界面显示
+at -l 查看队列任务
+atrm  任务号  删除队列任务
+crontab -e 进入编辑文件编辑当前的crontab
+*/1 每隔一分钟 * 不限时 * 不限天 1-5 1到5月份 2,5 每周二和周五 脚本
+ps -el | grep crond
+/etc/rc.d/init.d/crond start 启动
+
+系统文件构成
+/usr/bin 存放所有用户可执行命令
+/usr/sbin root可执行
+/home 宿主目录
+软件包管理
+yum install 软件名
+yum update 名
+yum remove 软件 卸载
+yum search 软件 查找
+shell脚本
+#!/bin/sh
+#this is a 注释
+echo "s de " 输出字符串
+/bin/pwd     敲命令的绝对路径
+以.sh结尾，
+运行脚本 sh ex2.sh
+
+/bin/date +%F 格式化日期
+/bin/df -h   系统文件信息命令
+/usr/bin/who | /bin/grep -v(排除) root 
+/usr/bin/free -m 内存信息
+/usr/bin/write root < /test/ex2.info(这个文件写给root) && /bin/rm /test/ex2.info
+有短路 
+echo 空格为隔一行
+shell变量
+临时变量和永久变量，永久为全局的，临时在内部定义，永久的是环境变量，不随执行
+结束而消失
+NUM=5 俩边不要有空格
+取$NUM
+STR="A STRING "
+也可以执行结果复制给变量，使用命令替换符号
+"" 会把变量值输出，‘’ 内容原封不动输出
+set 查看所有变量
+unset NUM 删除NUM变量
+P1=`date`  `` 可以执行里面的命令
+P1=$NUM 赋值
+
+占位变量
+/bin/ls -l $1    $1代表占位变量 范围为1-9 0为命令本身
+/bin/ls -l $2
+/bin/ls -l $3
+运行的时候得
+sh ex3.sh 具体值1 具体值2 具体值3
+特殊变量
+$*   这个程序的所有参数   具体值1 具体值2 具体值3
+$#  参数个数	       3
+$$ 程序的PID	      3525
+$! 执行上一个后台命令的PID
+$? 执行上一个命令的返回值   0
+$0  ex3.sh
+键盘录入
+read f s t       键盘输入录入这三个变量中
+sh -x ex5.sh  x为执行命令跟踪， 会直接显示命令前有一个+号
+shell 运算
+expr 对整数运算，必须用空格隔开
+expr  10 + 5  10 和5和+ 之间都要空格
+支持加减乘除 * 要转义
+expr 10 \* 5 
+expr `expr 10 - 2` \* 5 先算`` 里面的
+可以对变量运算
+echo `expr $NUM + 8`
+测试命令
+test str1=str2   字符串1和字符串2是否相等 在脚本中配合if else做的
+int值  整数是否相等
+文件测试
+test -d file
+控制语句
+if [ -d $1 ]   	[]替代test 内部有空格
+then
+	
+else
+	
+fi
+
+if elif 语句
+if [ d $1 ]
+then  
+elif [ -f $2 ]
+then 
+else
+
+fi
+逻辑与和逻辑或
+-a 表示逻辑与 
+-o 表示逻辑或
+ case 和 for 控制
+while 和 break
+
+ 

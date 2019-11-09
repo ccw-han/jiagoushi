@@ -9,14 +9,19 @@ public class ServerCompletionHandler implements CompletionHandler<AsynchronousSo
 
 	@Override
 	public void completed(AsynchronousSocketChannel asc, Server attachment) {
-		//当有下一个客户端接入的时候 直接调用Server的accept方法，这样反复执行下去，保证多个客户端都可以阻塞
+		//当有下一个客户端接入的时候 直接调用Server的accept方法，
+		// 这样反复执行下去，保证多个客户端都可以阻塞
+		//有点递归的意思 接力
 		attachment.assc.accept(attachment, this);
-		read(asc);
+		read(asc);//发数据和写数据都是异步化的
+		//nio是写入缓冲区然后准备然后通知cpu去读
+		//aio是写入缓冲区的时候，开启了一个线程去异步的读缓冲区的数据
 	}
 
 	private void read(final AsynchronousSocketChannel asc) {
 		//读取数据
 		ByteBuffer buf = ByteBuffer.allocate(1024);
+		//这边是异步的读，不影响其他代码执行 第一个是目的地，第二个是读的数据
 		asc.read(buf, buf, new CompletionHandler<Integer, ByteBuffer>() {
 			@Override
 			public void completed(Integer resultSize, ByteBuffer attachment) {
@@ -42,6 +47,7 @@ public class ServerCompletionHandler implements CompletionHandler<AsynchronousSo
 			ByteBuffer buf = ByteBuffer.allocate(1024);
 			buf.put(response.getBytes());
 			buf.flip();
+			//write 返回的是future模式 并行的一起去写 内部是多线程
 			asc.write(buf).get();
 		} catch (InterruptedException e) {
 			e.printStackTrace();
