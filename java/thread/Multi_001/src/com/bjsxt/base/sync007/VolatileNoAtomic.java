@@ -5,6 +5,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * volatile关键字不具备synchronized关键字的原子性（同步）
  * @author alienware
+ *	变量在多个线程间可见
+ * 每个线程有自己的工作区，对内存的拷贝
+ * volatile只是可见不能保证原子性 轻量级的synchronized 性能很高
  *
  */
 public class VolatileNoAtomic extends Thread{

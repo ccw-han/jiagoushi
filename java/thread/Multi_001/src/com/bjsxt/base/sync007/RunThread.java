@@ -20,7 +20,10 @@ public class RunThread extends Thread{
 		RunThread rt = new RunThread();
 		rt.start();
 		Thread.sleep(1000);
+		//主内存和线程空间都一致 主线程设置后，另外线程立马能读到
+		//强制线程去主内存去读取变量而不是自己的内存区域
 		rt.setRunning(false);
+
 		System.out.println("isRunning的值已经被设置了false");
 	}
 	

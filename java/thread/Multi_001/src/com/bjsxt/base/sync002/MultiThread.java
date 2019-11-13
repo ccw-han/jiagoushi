@@ -9,10 +9,10 @@ package com.bjsxt.base.sync002;
  */
 public class MultiThread {
 
-	private int num = 0;
-	
+	private static int num = 0;
+	//可以用锁解决所有办法，jdk1.7已经做了优化
 	/** static */
-	public synchronized void printNum(String tag){
+	public static synchronized void printNum(String tag){
 		try {
 			
 			if(tag.equals("a")){
@@ -34,7 +34,7 @@ public class MultiThread {
 	//注意观察run方法输出顺序
 	public static void main(String[] args) {
 		
-		//俩个不同的对象
+		//俩个不同的对象  线程互不干扰 都执行
 		final MultiThread m1 = new MultiThread();
 		final MultiThread m2 = new MultiThread();
 		

@@ -11,7 +11,7 @@ public class UsePriorityBlockingQueue {
 	
 	public static void main(String[] args) throws Exception{
 		
-		
+		//基于优先级 无界队列 内部采用公平锁
 		PriorityBlockingQueue<Task> q = new PriorityBlockingQueue<Task>();
 		
 		Task t1 = new Task();
@@ -31,10 +31,11 @@ public class UsePriorityBlockingQueue {
 		
 		// 1 3 4
 		System.out.println("容器：" + q);
+		//调用take时才排序，后面的都排序了
 		System.out.println(q.take().getId());
 		System.out.println("容器：" + q);
-//		System.out.println(q.take().getId());
-//		System.out.println(q.take().getId());
+		System.out.println(q.take().getId());
+		System.out.println(q.take().getId());
 		
 
 		

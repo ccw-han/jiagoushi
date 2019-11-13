@@ -2,7 +2,7 @@ package com.bjsxt.base.sync005;
 /**
  * synchronized异常
  * @author alienware
- *
+ *异常会释放锁的情况
  */
 public class SyncException {
 
@@ -18,6 +18,7 @@ public class SyncException {
 					throw new RuntimeException();
 				}
 			} catch (InterruptedException e) {
+				//这边锁会释放，防止线程安全问题，需要业务支持
 				e.printStackTrace();
 			}
 		}

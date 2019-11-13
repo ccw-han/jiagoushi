@@ -1,6 +1,7 @@
 package com.bjsxt.base.sync004;
 /**
  * 业务整体需要使用完整的synchronized，保持业务的原子性。
+ * 一致性就是一个时间点的数据，经过多久还是那个数据 ，就算很多人更改，宁可报异常也不返回新值
  * @author alienware
  *
  */

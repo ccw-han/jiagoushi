@@ -12,6 +12,9 @@ public class UseQueue {
 	public static void main(String[] args) throws Exception {
 		
 		//高性能无阻塞无界队列：ConcurrentLinkedQueue
+		//无锁方式 性能高于blockingqueue 基于链接无界的线程安全 不允许null元素
+		//add和offer这里是没区别的
+		//非阻塞就一个queue
 		/**
 		ConcurrentLinkedQueue<String> q = new ConcurrentLinkedQueue<String>();
 		q.offer("a");
@@ -27,6 +30,7 @@ public class UseQueue {
 		*/
 		
 		/**
+		 * 定长数组，没实现读写分离，生产和消费不能同时进行
 		ArrayBlockingQueue<String> array = new ArrayBlockingQueue<String>(5);
 		array.put("a");
 		array.put("b");
@@ -34,12 +38,13 @@ public class UseQueue {
 		array.add("d");
 		array.add("e");
 		array.add("f");
+		 //放三秒钟，还放不进去返回就false
 		//System.out.println(array.offer("a", 3, TimeUnit.SECONDS));
 		*/
 		
 		
 		/**
-		//阻塞队列
+		//阻塞队列 内部采用读写分离锁 生产和消费并行 无界队列
 		LinkedBlockingQueue<String> q = new LinkedBlockingQueue<String>();
 		q.offer("a");
 		q.offer("b");
@@ -62,7 +67,8 @@ public class UseQueue {
 		}
 		*/
 		
-		
+		//没有缓冲，生产数据直接被消费者消费
+		//消费者take阻塞着，然后放完那边立马能取到 先take后add
 		final SynchronousQueue<String> q = new SynchronousQueue<String>();
 		Thread t1 = new Thread(new Runnable() {
 			@Override

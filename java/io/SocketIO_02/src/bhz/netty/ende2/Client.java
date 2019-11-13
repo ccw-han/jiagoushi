@@ -16,30 +16,30 @@ import io.netty.handler.codec.string.StringEncoder;
 
 public class Client {
 
-	public static void main(String[] args) throws Exception {
-		
-		EventLoopGroup group = new NioEventLoopGroup();
-		
-		Bootstrap b = new Bootstrap();
-		b.group(group)
-		 .channel(NioSocketChannel.class)
-		 .handler(new ChannelInitializer<SocketChannel>() {
-			@Override
-			protected void initChannel(SocketChannel sc) throws Exception {
-				sc.pipeline().addLast(new FixedLengthFrameDecoder(5));
-				sc.pipeline().addLast(new StringDecoder());
-				sc.pipeline().addLast(new ClientHandler());
-			}
-		});
-		
-		ChannelFuture cf = b.connect("127.0.0.1", 8765).sync();
-		
-		cf.channel().writeAndFlush(Unpooled.wrappedBuffer("aaaaabbbbb".getBytes()));
-		cf.channel().writeAndFlush(Unpooled.copiedBuffer("ccccccc".getBytes()));
-		
-		//等待客户端端口关闭
-		cf.channel().closeFuture().sync();
-		group.shutdownGracefully();
-		
-	}
+    public static void main(String[] args) throws Exception {
+		//第三种方式就是分为头信息和body信息，head定义长度 长度是多少就收到多少
+        EventLoopGroup group = new NioEventLoopGroup();
+
+        Bootstrap b = new Bootstrap();
+        b.group(group)
+                .channel(NioSocketChannel.class)
+                .handler(new ChannelInitializer<SocketChannel>() {
+                    @Override
+                    protected void initChannel(SocketChannel sc) throws Exception {
+                        sc.pipeline().addLast(new FixedLengthFrameDecoder(5));
+                        sc.pipeline().addLast(new StringDecoder());
+                        sc.pipeline().addLast(new ClientHandler());
+                    }
+                });
+
+        ChannelFuture cf = b.connect("127.0.0.1", 8765).sync();
+
+        cf.channel().writeAndFlush(Unpooled.wrappedBuffer("aaaaabbbbb".getBytes()));
+        cf.channel().writeAndFlush(Unpooled.copiedBuffer("ccccccc".getBytes()));
+
+        //等待客户端端口关闭
+        cf.channel().closeFuture().sync();
+        group.shutdownGracefully();
+
+    }
 }

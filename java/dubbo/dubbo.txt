@@ -1,0 +1,218 @@
+﻿1分布式服务治理简介  阿里的 soa一套部署，到处调用
+1很多项目，就乱了。互相调用，以前就是写接口，返回json
+各种语言终端进入dubbo子系统，然后dubbo连接各语言用restful访问各语言系统，然后给另一个dubbo子系统，然后连接外部的另一
+套系统
+2分层打入jar包放入其他节点上，m 的war包层怎么调service jar包层，使用dubbo，n多个服务。服务的高可用，模型为集群
+会监控服务的性能，分配权重，负载均衡策略，服务治理框架
+3分布式服务框架，服务者和消费者方式在dubbo注册
+4核心 基于长连接的NIO框架封装，多线程模型，序列化，请求响应模式信息交换
+集群容错，地址路由，动态配置，自动发现，基于注册中心目录服务，消费方动态查找生产方，地址透明，服务可以
+平滑增加和减少机器
+5spring加载dubbo，没有api侵入
+6http://dubbo.io 官网
+7垂直化就是一个项目
+provider container service层的jar包  0start
+registry 注册中心 1register       用zookeeper技术做注册中心
+consumer 订阅注册中心 2subscribe
+响应地址给消费者，如果有长连接推送变更数据 3notify
+消费者基于负载均衡算法，选一台调用，失败调用另一台去调用生产者 4invoke
+消费者和提供者监控 monitor 5count
+remote-provider.xml
+<bean id="xxxservice" class="xxxxServiceImpl"/> 本地一样，实现远程服务
+<dubbo:service interface="xxxxService" ref="xxxservice"/>暴露远程服务配置
+remote-consumer.xml
+<dubbo:reference id="xxxxService" interface="xxxxService"/> 增加应用远程服务配置
+<bean id="xxxAction" class="xxxxAction"> 和本地一样使用远程服务
+	<property name="xxxxService" ref="xxxxService"/>
+</bean>
+2入门实例
+1使用spring配置
+2服务方jar包
+接口 SampleService.java        spring注解
+实现 SampleServiceImpl.java 
+引入dubbo
+引入spring
+dubbo-2.5.2.jar
+依赖zookeeper-3.4.5.jar
+zkclient-0.1.jar
+web.xml不需要配置，与spring紧密集合
+sample-provider.xml
+<dubbo:application name="sample-provider"/>这是个应用，单独的jar包起个名字
+<dubbo:registry address="zookeeper://192.168.1.121:2181"/> 暴露注册中心服务地址
+<dubbo:protocol name="dubbo" port="20880"/> dubbo协议暴端口
+<bean id="sampleService" class="SampleServiceImpl"/> 本地一样，实现远程服务
+<dubbo:service retries="0" interface="SampleService" ref="sampleService"/>暴露远程服务配置,避免重复调用soa服务
+打成jar包发布到节点上，利用dubbo提供的main方法，来启动
+3消费者jar包
+消费者项目包含提供者项目，用maven依赖，现在把上面的提供者服务接口和实体类，服务实现类调的是远程的，复制过来
+用就是启动消费者，直接像本地一样用了，getBean().sayHello();
+sample-consumer.xml
+<dubbo:application name="sample-consumer"/>这是个应用，单独的消费方jar包起个名字
+<dubbo:registry address="zookeeper://192.168.1.121:2181?backup=192.168.1.122:2181,192.168.1.123:2181"/> 订阅注册中心服务地址，地址是全的，有122和123，随便哪个都可以
+<dubbo:reference id="sampleService" check="false" interface="SampleService" />像本地bean一样用远程的服务方接口，
+跟注册中心的dubbo的名字一样
+检查依赖关系为true，有依赖的时候，需求进行设计
+打成jar包发布到节点上，利用dubbo提供的main方法，来启动，像调用本地方法一样调用远程的
+打成jar包，然后使用java命令运行jar包
+
+3管控台部署使用
+单独的项目，spring项目，依赖管控台  121配置即可。zookeeper都要启动
+dubbo-admin-2.5.4.jar
+cd /usr/local/apache-tomcat-7.0.29/webapps/
+放入dubbo-admin-2.5.4.war
+unzip dubbo-admin-2.5.4.war -d dubbo-admin
+cd dubbo-admin/
+cd WEB-INF/
+vim dubbo.properties
+dubbo.registry.address=zookeeper://192.168.1.121:2181?backup=192.168.1.122:2181,192.168.1.123:2181
+dubbo.admin.root.password=root
+dubbo.admin.guest.password=root
+cd /usr/local/apache-tomcat-7.0.29/
+cd bin/
+vim catalina.sh		 初始化的时候堆内存jvm参数
+JAVA_OPTS='-Xms256m -Xmx512m'
+cd /usr/local/apache-tomcat-7.0.29/bin/start.sh
+cd /usr/local/apache-tomcat-7.0.29/logs/catalina.out
+tail -f -n 300 catalina.out   动态输出日志
+启动zookeeper三节点
+启动121的tomcat
+http://1692.168.1.121:8080/dubbo-admin
+很多可以配置基本上所有信息都在
+给服务提供者启动起来，有接口提供了，控制台有了应用名
+
+4依赖检查   一个服务依赖另外一个服务
+p userService      c 是消费者也是提供者，本身是服务，但需要调用userService的服务
+一二层就够了，层次太深
+DependdencyServiceImpl  @Autowired    
+SampleService
+dependdency-provider.xml
+<bean id="dependdencyService" class="DependdencyServiceImpl"/> 本地一样，实现远程服务，本地要有SampleService这个服务类接口。
+<dubbo:application name="dependdency-provider"/>这是个应用，单独的jar包起个名字
+<dubbo:registry address="zookeeper://192.168.1.121:2181"/> 暴露注册中心服务地址
+<dubbo:protocol name="dubbo" port="20880"/> dubbo协议暴端口
+如果sampleService没启动，依赖很多service，默认为true，启动这个服务的时候会去检查所
+依赖的服务有没有开启，如果没有开启，那么这边会报错，最好开启。
+关闭检查的话，开始不会报错，最后报错了
+有些情况是可以的，没有你我也行，就可以false。
+如果延时服务，或者懒加载，可以关闭检查，不然启动不可用很难受，总是会拿到引用，服务恢复时，能自动连上。
+<dubbo:reference id="sampleService" check="true" interface="SampleService"/>  依赖这个类，通过注解注入这个服务，先启动这个服务
+<dubbo:service retries="0" interface="DependdencyService" ref="dependdencyService"/>暴露远程服务配置,避免重复调用soa服务
+打成jar包发布到节点上，利用dubbo提供的main方法，来启动
+dependdency-consumer.xml
+<dubbo:application name="dependdency-consumer"/>这是个应用，单独的消费方jar包起个名字
+<dubbo:registry address="zookeeper://192.168.1.121:2181?backup=192.168.1.122:2181,192.168.1.123:2181"/> 订阅注册中心服务地址，地址是全的，有122和123，随便哪个都可以
+<dubbo:reference id="dependdencyService" check="false" interface="DependdencyService" />像本地bean一样用远程的服务方接口，
+跟注册中心的dubbo的名字一样
+
+5集群容错 有很多种形式，比如挂了该怎么处理，官网有
+dubbo天然的集群模式
+在多个节点上部署同样的服务。主从高可用
+点开一个服务，里面有好几个ip，默认使用一个或者2个服务。设置权重
+retires="2" 默认为2，自动重试，重复写，第一次访问好久没反馈，可是确实走了，发现存了好几次数据，自己做去重
+设置为0，不进行重试，a挂了自动去访问b，如果a没挂返回就是失败，一般就是0
+配置
+
+<dubbo:service retries="0" cluster="模式" interface="DependdencyService" ref="dependdencyService"/>暴露远程服务配置,避免重复调用soa服务
+即可
+多个节点配置一模一样。加个这个集群属性即可
+
+6负载均衡配置
+很多策略
+<dubbo:service retries="0" cluster="模式" loadbalance="roundrobin" interface="DependdencyService" ref="dependdencyService"/>暴露远程服务配置,避免重复调用soa服务
+可以管控台设置负载均衡
+
+7其他细节配置
+1线程池 一个服务有少个线程来运行 看官网，可以对整个服务配，也可以对单个服务配
+<dubbo:protocol name="dubbo" dispatcher="all" threadpool="fixed" threads="100"/>
+某个方法上配置也可以
+<dubbo:methed  > 服务协议 角色  方法  类都可以配置   
+2直连通信
+<dubbo:reference url="ip:port" .../>
+3禁止服务配置,只订阅，还可以只注册
+<dubbo:registry address="zookeeper://192.168.1.121:2181?backup=192.168.1.122:2181,192.168.1.123:2181" register="false"/>
+会没有任何注册日志输出，不用删除zookeeper，这个是不依赖这个注册中心，只暴露这个端口
+消费者呢，可以用url直接相连
+4序列化
+<dubbo:protocol name="dubbo"  dispatcher="all" threadpool="fixed" threads="100" serialization="kryo"/>
+还可以配很多东西，
+5最大并发访问
+<dubbo:protocol name="dubbo"  dispatcher="all" threadpool="fixed" threads="100" contextpath="provider" accepts="500"/>
+6多个注册中心。有的时候需要用到有的时候不需要用到
+7静态服务，启动的时候是禁用状态
+人工启用
+8不同服务不同协议
+9服务分组  一个接口有不同实现  使用group进行标识
+10多版本	不同的实现是多个版本
+11分组聚合
+12参数验证   不仅用spring注解
+13结果缓存   加上一个参数，速度快一点
+14泛型化
+15回声测试 就是测试
+16异步调用，用的少
+17本地调用
+18连接控制
+19并发控制  谁调我不能超过10个
+20客户端并发执行 连接请求数不能超过10个
+21延迟连接
+22令牌验证 调我的时候输入一个token
+23路由规则 做部署的时候，跨机房的时候，有一些黑名单有一些不提供服务
+24优雅停机
+25主机绑定
+26调优很多，
+27日志类的
+28分布式事务没实现，可以用spring事务解决 
+其实本质上是main方法都写好了
+
+
+
+
+
+
+
+
+
+
+
+
+8zookeeper配置
+121 122 123三个节点都要装zookeeper,配置文件都一样  高可用，一主二从
+1下载安装 
+cd /usr/local/software    zookeeper-3.4.5.tar.gz
+tar -zxvf zookeeper-3.4.5.tar.gz -C /usr/local
+vim /etc/profile  环境变量
+export ZOOKEEPER_HOME=/usr/local/zookeeper
+export PATH=.:$jJAVA_HOEM/bin:$ZOOKEEPER_HOME/bin:$PATH
+改文件夹名将zookeeper-3.4.5改成zookeeper
+cd zookeeper/conf/
+mv zoo_sample.cfg zoo.cfg  	改名
+vim zoo.cfg
+dataDir=/usr/local/zookeeper/data
+server.0=192.168.1.121:2888:3888		这个0就是下面那个存的0
+server.1=192.168.1.122:2888:3888
+server.2=192.168.1.123:2888:3888
+cd /usr/local/zookeeper
+加一个data文件夹
+mkdir data
+在data下
+vim myid
+写个0     第二个节点写1  第三个写2
+zkServer.sh start  	启动服务 配了环境变量了，在什么位置都可以敲
+zkServer.sh status
+随便一个节点
+zkCli.sh  客户端
+启动生产者的应用，看看zookeeper有什么变化
+多了一个dubbo/有个SampleService
+dubbo运行在spring中即可
+
+1一种是启动zookeeper，启动main方法，zookeeper自动注册那个方法信息。
+2
+
+1.关于DUBBO 服务提供端几种部署方式：
+    1）tomcat 将服务端跑在tomcat，这种方式比较吃资源浪费端口；
+    
+2）用DUBBO 提供的com.alibaba.dubbo.container.Main 方法，将工程打成jar包运行，相对来说这种方式不需要那么                  
+多tomcat 也就不需要那么多端口号（官方推荐用这种方式可以实现优雅停机）；
+
+
+
+

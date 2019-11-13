@@ -20,17 +20,19 @@ public class Client {
 	* */
     public static void main(String[] args) throws Exception {
 		//主要就是解耦 业务就自己决定就可以了
+        //就有一个线程组就行了，因为不需要处理连接，只要处理网络读写事件
         EventLoopGroup group = new NioEventLoopGroup();
         Bootstrap b = new Bootstrap();
         b.group(group)
                 .channel(NioSocketChannel.class)
+                //写法有区别，就是为了区分服务器端和client端的写法
                 .handler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     protected void initChannel(SocketChannel sc) throws Exception {
                         sc.pipeline().addLast(new ClientHandler());
                     }
                 });
-
+        //拿到异步管道 拿到这个异步管道就可以拿到管道 可以绑定多个端口
         ChannelFuture cf1 = b.connect("127.0.0.1", 8765).sync();
         //ChannelFuture cf2 = b.connect("127.0.0.1", 8764).sync();
         //发送消息

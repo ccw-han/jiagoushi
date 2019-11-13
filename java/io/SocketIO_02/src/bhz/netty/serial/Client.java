@@ -15,7 +15,7 @@ import bhz.utils.GzipUtils;
 
 public class Client {
 
-	
+	//序列化就是为了网络传输和对象持久化 jboss的marshalling还有kyro protobuf的 messagepak框架
 	public static void main(String[] args) throws Exception{
 		
 		EventLoopGroup group = new NioEventLoopGroup();

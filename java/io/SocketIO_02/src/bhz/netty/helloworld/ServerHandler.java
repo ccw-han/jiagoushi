@@ -20,13 +20,17 @@ public class ServerHandler extends ChannelHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg)
             throws Exception {
+	    //netty封装好的buff
         ByteBuf buf = (ByteBuf) msg;
         byte[] req = new byte[buf.readableBytes()];
         buf.readBytes(req);
         String body = new String(req, "utf-8");
         System.out.println("Server :" + body);
         String response = "进行返回给客户端的响应：" + body;
+        //写数据只能写缓冲类型数据，所以直接有工具类直接转为字节buff
+        //不用释放，因为写操作有释放操作 也可以先write 最后flush flush才会去发给服务器端
         ctx.writeAndFlush(Unpooled.copiedBuffer(response.getBytes()));
+        //加一个listener监听器，发完直接就关闭了 异步断开 可以做短连接
         //.addListener(ChannelFutureListener.CLOSE);
     }
 

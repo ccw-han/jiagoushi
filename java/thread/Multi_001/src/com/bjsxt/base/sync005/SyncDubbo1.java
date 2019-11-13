@@ -1,6 +1,6 @@
 package com.bjsxt.base.sync005;
 /**
- * synchronized的重入
+ * synchronized的重入 方法中调用同步方法，也是线程安全的
  * @author alienware
  *
  */

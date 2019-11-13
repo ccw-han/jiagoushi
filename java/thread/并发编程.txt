@@ -34,7 +34,7 @@ AtomicInteger 原子类不用sych了，中间会乱，最终会是10000.
 synch一定会同步，1000,2000,10000
 3.1线程通信，使用wait和notify，object类的
 wait方法释放锁，notify不放锁，多个线程之间有个顺序流，这个跑，另一个等之类的。
-必须配合synchronized，不然没法使用
+必须配合synchronized，不然没法使用 三个一起来
 锁随便new一个对象，保持一样就行。然后lock.wait(),lock.nitify()
 在线程方法中run中代码块加synchronized，wait和notify在其中用
 因为线程之间是同步的，其中一个wait释放锁，另外一个线程就会执行，其中notify了，但是不放锁，得我执行完了以后，wait那个就会唤醒

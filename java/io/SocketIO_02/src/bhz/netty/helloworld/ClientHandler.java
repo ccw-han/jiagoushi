@@ -11,6 +11,7 @@ public class ClientHandler extends ChannelHandlerAdapter {
 
     //jboss序列化框架 mina不考虑 nettyall jar包需要 只需要这个包就足够了
     @Override
+    //生命周期
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
     }
 
@@ -27,6 +28,7 @@ public class ClientHandler extends ChannelHandlerAdapter {
             System.out.println("Client :" + body);
             String response = "收到服务器端的返回信息：" + body;
         } finally {
+            //显示去释放，不然缓存会释放，不然长时间缓存会爆掉
             ReferenceCountUtil.release(msg);
         }
     }
